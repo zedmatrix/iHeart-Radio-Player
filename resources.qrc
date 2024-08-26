@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/iHeartRadio_Icon.png</file>
+        <!-- or <file>resources/iHeart_Radio.png</file> -->
+    </qresource>
+</RCC>
