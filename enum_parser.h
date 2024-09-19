@@ -48,11 +48,11 @@ inline Hits hitToEnum(const QString &key) {
 }
 
 enum class Streams {
-    pls, //pls_stream,
+    pls,
     secure_pls,
-    hls, //hls_stream,
+    hls,
     secure_hls,
-    shoutcast, //shoutcast_stream,
+    shoutcast,
     secure_shoutcast,
     StreamsCount
 };
@@ -72,9 +72,9 @@ enum class Stations {
     band,
     call,
     city,
-    url,  //dartUrl
-    desc, //description
-    freq, //frequency
+    url,
+    desc,
+    freq,
     id,
     logo,
     name,
