@@ -1,17 +1,24 @@
-#ifndef UI_MAINWINDOW_H
-#define UI_MAINWINDOW_H
+/********************************************************************************
+** Form generated from reading UI file 'mainwindowQneENk.ui'
+**
+** Created by: Qt User Interface Compiler version 6.7.2
+**
+** WARNING! All changes made in this file will be lost when recompiling UI file!
+********************************************************************************/
+
+#ifndef MAINWINDOWQNEENK_H
+#define MAINWINDOWQNEENK_H
 
 #include <QtCore/QVariant>
-#include <QtGui/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QScrollBar>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
-#include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QWidget>
 
 QT_BEGIN_NAMESPACE
@@ -29,13 +36,17 @@ public:
     QPushButton *GetStreams;
     QPushButton *GetSearch;
     QPushButton *Quit;
+    QLabel *title;
+    QLabel *artist;
+    QPushButton *updateMetaData;
+    QScrollBar *volumeBar;
     QStatusBar *statusbar;
 
     void setupUi(QMainWindow *MainWindow)
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName("MainWindow");
-        MainWindow->resize(1200, 800);
+        MainWindow->resize(800, 600);
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName("centralwidget");
         searchTerm = new QLineEdit(centralwidget);
@@ -46,13 +57,13 @@ public:
         search->setGeometry(QRect(10, 10, 80, 22));
         rawText = new QTextEdit(centralwidget);
         rawText->setObjectName("rawText");
-        rawText->setGeometry(QRect(840, 340, 300, 260));
+        rawText->setGeometry(QRect(10, 440, 361, 130));
         outputText = new QTextEdit(centralwidget);
         outputText->setObjectName("outputText");
-        outputText->setGeometry(QRect(840, 50, 300, 260));
+        outputText->setGeometry(QRect(419, 440, 361, 130));
         verticalLayoutWidget = new QWidget(centralwidget);
         verticalLayoutWidget->setObjectName("verticalLayoutWidget");
-        verticalLayoutWidget->setGeometry(QRect(10, 40, 800, 700));
+        verticalLayoutWidget->setGeometry(QRect(9, 49, 781, 351));
         verticalLayout = new QVBoxLayout(verticalLayoutWidget);
         verticalLayout->setObjectName("verticalLayout");
         verticalLayout->setContentsMargins(0, 0, 0, 0);
@@ -65,6 +76,24 @@ public:
         Quit = new QPushButton(centralwidget);
         Quit->setObjectName("Quit");
         Quit->setGeometry(QRect(460, 10, 80, 22));
+        title = new QLabel(centralwidget);
+        title->setObjectName("title");
+        title->setGeometry(QRect(19, 410, 301, 20));
+        artist = new QLabel(centralwidget);
+        artist->setObjectName("artist");
+        artist->setGeometry(QRect(419, 410, 281, 20));
+        updateMetaData = new QPushButton(centralwidget);
+        updateMetaData->setObjectName("updateMetaData");
+        updateMetaData->setGeometry(QRect(550, 10, 80, 22));
+        volumeBar = new QScrollBar(centralwidget);
+        volumeBar->setObjectName("volumeBar");
+        volumeBar->setGeometry(QRect(380, 440, 31, 121));
+        volumeBar->setFocusPolicy(Qt::FocusPolicy::NoFocus);
+        volumeBar->setLayoutDirection(Qt::LayoutDirection::RightToLeft);
+        volumeBar->setMaximum(100);
+        volumeBar->setSliderPosition(30);
+        volumeBar->setOrientation(Qt::Orientation::Vertical);
+        volumeBar->setInvertedAppearance(true);
         MainWindow->setCentralWidget(centralwidget);
         statusbar = new QStatusBar(MainWindow);
         statusbar->setObjectName("statusbar");
@@ -83,6 +112,9 @@ public:
         GetStreams->setText(QCoreApplication::translate("MainWindow", "Get Streams", nullptr));
         GetSearch->setText(QCoreApplication::translate("MainWindow", "Get Search", nullptr));
         Quit->setText(QCoreApplication::translate("MainWindow", "Quit", nullptr));
+        title->setText(QCoreApplication::translate("MainWindow", "title", nullptr));
+        artist->setText(QCoreApplication::translate("MainWindow", "artist", nullptr));
+        updateMetaData->setText(QCoreApplication::translate("MainWindow", "Meta Data", nullptr));
     } // retranslateUi
 
 };
@@ -92,4 +124,5 @@ namespace Ui {
 } // namespace Ui
 
 QT_END_NAMESPACE
-#endif  //UI_MAINWINDOW_H
+
+#endif // MAINWINDOWQNEENK_H
