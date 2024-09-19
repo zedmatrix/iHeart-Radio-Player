@@ -1,33 +1,66 @@
 void MainWindow::onFinished(QNetworkReply* reply)
 {
+    QString rawText = {};
     // Handle onFinished signal here
     if (reply->error() == QNetworkReply::NoError) {
-        ui->rawText->setText("No Error");
+
         QUrl requestUrl = reply->request().url();
-        // Get the status code from the reply
+        rawText += QString("Request URL: %1").arg(requestUrl.toString());
+
         QVariant statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+        if (requestUrl.toString().contains("playlist")) {
+            playlistData = reply->readAll();
+            parseM3U(playlistData);
+        }
+
+        if (requestUrl.path().contains(".pls")) {
+            plsData = reply->readAll();
+            lines = plsData.split('\n');
+            for (const QString& line : lines) {
+                if (line.trimmed().startsWith("File1=")) {
+                    streamUrl = line.split('=').last().trimmed();
+                    break;
+                }
+            }
+            StartPlay(streamUrl);
+            rawText += QString("*** PLS Stream *** %1\n").arg(streamUrl.toString());
+        }
+
+        if (requestUrl.toString().contains("hls.m3u8")) {
+            hlsData = reply->readAll();
+            lines = hlsData.split('\n');
+            for (const QString& line : lines) {
+                if (!line.trimmed().startsWith("#")) {
+                    streamUrl = line.trimmed();
+                    break;
+                }
+            }
+            StartPlay(streamUrl);
+            rawText += QString("*** HLS Stream *** %1\n").arg(streamUrl.toString());
+        }
 
         if (requestUrl.path().contains("/searchAll")) {
-            QByteArray responseData = reply->readAll();     //get reply from server
-            jsonParser(responseData, true, false);          // Set Search = true, Stream = false
+            QByteArray responseData = reply->readAll();
+            jsonParser(responseData, true, false);
         } else if (requestUrl.path().contains("/liveStations")) {
-            // Check if the status code is 200
+
             if (statusCode.isValid() && statusCode.toInt() == 200) {
-                qDebug() << "Request successful, status code:" << statusCode.toInt();
-                QByteArray responseData = reply->readAll(); // Optionally read the data
+                rawText += QString("Request successful, status code: %1\n").arg(statusCode.toInt());
+                QByteArray responseData = reply->readAll();
                 Stream = true;
                 Search = false;
-                jsonParser(responseData, false, true);      // Set Search = false, Stream = true
+                jsonParser(responseData, false, true);
             } else {
-                qDebug() << "Request failed, status code:" << statusCode.toInt();
+                rawText += QString("Request failed, status code: %1\n").arg(statusCode.toInt());
             }
         } else if (requestUrl.path().contains("assets")) {
-            //Images get from url
+
+// Search through allStations for the matching newlogo
             if (statusCode.isValid() && statusCode.toInt() == 200) {
                 QByteArray imageData = reply->readAll();
                 QImage image;
                 if (image.loadFromData(imageData)) {
-                    // Search through allStations for the matching newlogo
+
                     for (const auto &stationMap : allStations) {
                         if (stationMap.value(Stations::newlogo) == requestUrl.toString()) {
                             int stationId = stationMap.value(Stations::id).toInt();
@@ -36,47 +69,43 @@ void MainWindow::onFinished(QNetworkReply* reply)
 
                             if (logoButtonMap.contains(stationId)) {
                                 QPushButton* logoButton = logoButtonMap[stationId];
-                                QIcon buttonIcon(pixmap.scaled(48, 48, Qt::KeepAspectRatio));
+                                QIcon buttonIcon(pixmap.scaled(38, 38, Qt::KeepAspectRatio));
                                 logoButton->setIcon(buttonIcon);
-                                logoButton->setIconSize(QSize(48,48));
-                                //logoLabel->setPixmap(pixmap.scaled(80, 60, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+                                logoButton->setIconSize(QSize(38,38));
                         }
                             qDebug() << "Image loaded and stored for station ID:" << stationId;
                         }
                     }
                     int numImages = imageMap.size();
-                    qDebug() << "Number of pixmaps stored:" << numImages;
-
+                    rawText += QString("Number of pixmaps stored: %1\n").arg(numImages);
                 }
             } else {
-                qDebug() << "Image Request Failed Status Code:" << statusCode.toInt();
+                rawText += QString("Image Request Failed Status Code: %1\n").arg(statusCode.toInt());
             }
         } else {
-            // Handle unexpected or unrecognized paths
-            qDebug() << "Received response for an unexpected path:" << requestUrl.path();
+            rawText += QString("Received response for an unexpected path: %1\n").arg(requestUrl.toString());
         }
     } else {
         errorText = reply->errorString();
-        ui->rawText->setText("Error " + errorText);
+        qDebug() << "Error Text From Network Manager:" << errorText;
+
     }
+    ui->rawText->setText(rawText);
     reply->deleteLater();
 }
 
 void MainWindow::slotReadyRead()
 {
-    // Handle readyRead signal here
     qDebug() << ":slot Ready Read:";
 }
 
 void MainWindow::slotError(QNetworkReply::NetworkError code)
 {
-    // Handle errorOccurred signal here
     qDebug() << ":Network Error code:" << code;
 }
 
 void MainWindow::slotSslErrors(const QList<QSslError> &errors)
 {
-    // Handle sslErrors signal here
     qDebug() << ":ssl Error List:";
     for (const QSslError &error : errors) {
         qDebug() << error.errorString();
