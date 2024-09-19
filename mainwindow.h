@@ -1,9 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QtGlobal>
 #include <QApplication>
 #include <QMainWindow>
 #include <QMediaPlayer>
+#include <QMediaMetaData>
 #include <QAudioOutput>
 #include <QNetworkAccessManager>
 #include <QRegularExpression>
@@ -22,11 +24,19 @@
 #include <QLabel>
 #include <QDebug>
 #include <QWindow>
+#include <QTimer>
 #include <QIcon>
 #include <QPixmap>
 #include <QMessageBox>
-
+#include <QTextDocument>
 #include "enum_parser.h"
+
+extern "C" {
+    #include <libavformat/avformat.h>
+    #include <libavcodec/avcodec.h>
+    #include <libavutil/avutil.h>
+    #include <libavutil/log.h>
+}
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -39,21 +49,26 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    QNetworkAccessManager *manager; // Declare as a pointer
+    QAudioOutput *audioOutput;
+    QMediaPlayer *player;
+    QNetworkAccessManager *manager;
     void jsonParser(const QByteArray &responseData, bool Search, bool Stream);
 
     // List to hold the station mappings
     QMap<Hits, QString> hitsMap;
     QMap<Streams, QString> streamsMap;
     QMap<Stations, QString> stationMap;
-    QList<QMap<Stations, QString>> allStations;  // Define the variable
-    QMap<int, QPixmap> imageMap; // Maps station IDs to their corresponding QPixmaps
-    QMap<int, QPushButton*> logoButtonMap; // Declare this map as extern to access it globally
-    QString outputText, searchText, errorText;
+    QList<QMap<Stations, QString>> allStations;
+    QMap<int, QPixmap> imageMap;
+    QMap<int, QPushButton*> logoButtonMap;
+    QString metaUrl, outputText, searchText, errorText, title, artist;
+    QUrl streamUrl;
+    const char* FFurl;
     bool Search, Stream;
 
 private slots:
-    //Private functions
+
+    void openMedia(const QString &metaUrl);
     void SearchTriggered();
     void StreamTriggered(const QString &id, bool fromGui);
     void PlayBack(const QString &streamName, const QUrl &streamUrl, bool fromGui);
@@ -61,13 +76,9 @@ private slots:
     void slotReadyRead();
     void slotError(QNetworkReply::NetworkError code);
     void slotSslErrors(const QList<QSslError> &errors);
-    QMap<Stations, QString> populateStationMap(const QJsonObject &obj, QMap<Stations, QString> &stationMap);
-    void populateHitsMap (const QJsonObject &obj, QMap<Hits, QString> &hitsMap, QMap<Streams, QString> &streamsMap);
-    void populate(const QJsonObject &jsonObj, const QString &key);
-    void DisplayStations();
-    void DisplayHitStreams();
-    void clearLayout(QLayout* layout);
-    void popupImage(const int &id, QString const &stationName);
+    void MediaPlayerError(QMediaPlayer::Error error);
+    void MediaStatus(QMediaPlayer::MediaStatus status);
+    void parseM3U(const QString &m3uContent);
 
 private:
     Ui::MainWindow *ui;
@@ -75,9 +86,24 @@ private:
     QUrlQuery query;
     QNetworkRequest request;
     QNetworkReply *reply;
-    QMediaPlayer *player;
-    QAudioOutput *audioOutput;
-
+    QTimer *metadataTimer;
+    QString plsData, playlistData, hlsData;
+    QStringList lines;
+    AVFormatContext* Format_Context = nullptr;
+    AVDictionaryEntry* tag = nullptr;
+    AVStream* stream = nullptr;
+    AVDictionary* metadata = nullptr;
+    AVDictionary* streamMetadata = nullptr;
+    QMap<Stations, QString> populateStationMap(const QJsonObject &obj, QMap<Stations, QString> &stationMap);
+    void populateHitsMap (const QJsonObject &obj, QMap<Hits, QString> &hitsMap, QMap<Streams, QString> &streamsMap);
+    void populate(const QJsonObject &jsonObj, const QString &key);
+    void DisplayStations();
+    void DisplayHitStreams();
+    void clearLayout(QLayout* layout);
+    void popupImage(const int &id, QString const &stationName);
+    std::function<void(const QUrl&)> StartPlay;
+    void GetMetaData(const QString &metaUrl);
+    void updateMetadata();
 };
 
 #endif // MAINWINDOW_H
