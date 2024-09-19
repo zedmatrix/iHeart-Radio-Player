@@ -35,12 +35,10 @@ void MainWindow::populateHitsMap (const QJsonObject &obj, QMap<Hits, QString> &h
                 }
                 if (hEnum == Hits::feeds) {
                     if (hitsValue.isArray()) {
-                        // If hitsValue is an array
                         QJsonArray feedsArray = hitsValue.toArray();
                         QString feedsString = QJsonDocument(feedsArray).toJson(QJsonDocument::Compact);
                         hitsMap[hEnum] = feedsString;
                     } else if (hitsValue.isObject()) {
-                        // If hitsValue is an object
                         QJsonObject feedsObject = hitsValue.toObject();
                         QString feedsString = QJsonDocument(feedsObject).toJson(QJsonDocument::Compact);
                         hitsMap[hEnum] = feedsString;
@@ -48,12 +46,10 @@ void MainWindow::populateHitsMap (const QJsonObject &obj, QMap<Hits, QString> &h
                 }
                 if (hEnum == Hits::markets) {
                     if (hitsValue.isArray()) {
-                        // If hitsValue is an array
                         QJsonArray marketsArray = hitsValue.toArray();
                         QString marketsString = QJsonDocument(marketsArray).toJson(QJsonDocument::Compact);
                         hitsMap[hEnum] = marketsString;
                     } else if (hitsValue.isObject()) {
-                        // If hitsValue is an object
                         QJsonObject marketsObject = hitsValue.toObject();
                         QString marketsString = QJsonDocument(marketsObject).toJson(QJsonDocument::Compact);
                         hitsMap[hEnum] = marketsString;
@@ -93,6 +89,7 @@ QMap<Stations, QString> MainWindow::populateStationMap (const QJsonObject &obj, 
     }
     return stationMap;
 }
+
 // Main Populate Function Called from Network reply functions -> 'hits' and 'stations'
 void MainWindow::populate(const QJsonObject &jsonObj, const QString &key) {
     QJsonValue newValue = jsonObj.value(key);
@@ -101,7 +98,7 @@ void MainWindow::populate(const QJsonObject &jsonObj, const QString &key) {
         for (const QJsonValue &value : newArray) {
             if (value.isObject()) {
                 QJsonObject newObj = value.toObject();
-                //Function to Map 'hits' or 'stations'
+
                 if (key == "hits") {
                     populateHitsMap(newObj, hitsMap, streamsMap);
                 } else if (key == "stations") {
