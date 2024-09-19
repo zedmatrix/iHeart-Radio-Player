@@ -4,15 +4,10 @@ void MainWindow::popupImage(const int &id, QString const &stationName) {
     QPixmap pixmap = imageMap[id];
     QMessageBox msgBox;
     msgBox.setWindowTitle(stationName);
-    //msgBox.setText("Here is the station image:");
-
-    // Set the pixmap as the icon
-    msgBox.setIconPixmap(pixmap);
-
-    // Resize the message box after it's shown
-    msgBox.setMinimumSize(300, 300);  // Set minimum size
-    msgBox.setMaximumSize(300, 300);  // Set maximum size (optional)
-
+    msgBox.setStandardButtons(QMessageBox::Close);
+    msgBox.setIconPixmap(pixmap.scaled(300, 300, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    msgBox.setMinimumSize(100, 100);
+    msgBox.setMaximumSize(300, 300);
     // Execute and show the message box
     msgBox.exec();
 
