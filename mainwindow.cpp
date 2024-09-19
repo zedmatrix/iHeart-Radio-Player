@@ -1,83 +1,128 @@
 #include <QMainWindow>
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "DisplayStations.cpp"
+#include "DisplayHitStreams.cpp"
 #include "enum_parser.h"
 #include "jsonParser.cpp"
 #include "populate.cpp"
 #include "network_manager.cpp"
-#include "DisplayStations.cpp"
-#include "DisplayHitStreams.cpp"
 #include "popupImage.cpp"
+#include "QMPstatus_error.cpp"
+#include "openMedia.cpp"
+#include <QWidget>
+#include <QLabel>
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+#include "mousevolume.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , player(new QMediaPlayer(this))
+    , audioOutput(new QAudioOutput(this))
+    , manager(new QNetworkAccessManager(this))
 
 {
-    // Setup the Ui:: MainWindow
-    ui->setupUi(this);
 
+    ui->setupUi(this);
     this->setWindowTitle("iHeart Radio App");
     QIcon windowIcon(":/resources/iHeartRadio_Icon.png");
     this->setWindowIcon(windowIcon);
 
-    // Initialize MediaPlayer
-    player = new QMediaPlayer(this);
-    audioOutput = new QAudioOutput(this);
-    audioOutput->setVolume(0.4); // Volume is from 0.0 to 1.0
+    audioOutput->setVolume(0.4);
     player->setAudioOutput(audioOutput);
 
     searchText = ui->searchTerm->text();
     qDebug() << searchText;
-    // connect the buttons to routines
+
+    MouseVolume *volumeControl = new MouseVolume(ui, this, this);
+    volumeControl->InitializeVolumeBar(ui->volumeBar);
+
+    connect(player, &QMediaPlayer::mediaStatusChanged, this, &MainWindow::MediaStatus);
+    connect(player, &QMediaPlayer::errorOccurred, this, &MainWindow::MediaPlayerError);
+
+    connect(ui->searchTerm, &QLineEdit::returnPressed, this, &MainWindow::SearchTriggered);
     connect(ui->Quit, &QPushButton::clicked, this, &MainWindow::close);
     connect(ui->GetSearch, &QPushButton::clicked, this, &MainWindow::SearchTriggered);
+    connect(ui->updateMetaData, &QPushButton::clicked, this, &MainWindow::updateMetadata);
     connect(ui->GetStreams, &QPushButton::clicked, this, [this]() { StreamTriggered(searchText, false); });
-
-    manager = new QNetworkAccessManager(this); // Instantiate the pointer
     connect(manager, &QNetworkAccessManager::finished, this, &MainWindow::onFinished);
 
-    // Setup url for reuest
+    //Lambda to stop and player from streamUrl
+    StartPlay = [this](const QUrl &streamUrl) {
+        player->stop();
+        player->setSource(streamUrl);
+        player->play();
+        ui->rawText->append(QString(streamUrl.toString()));
+        qDebug() << "*** StartPlay: " << streamUrl;
+        metaUrl = streamUrl.toString();
+        GetMetaData(metaUrl);
+        if (streamUrl.toString().contains("playlist")) {
+            qDebug() << "*** NEW Request ***" << streamUrl;
+            QNetworkRequest request(streamUrl);
+            reply = manager->get(request);
+        }
+    };
+
+    // Setup url for request
     QUrl url("http://api2.iheart.com/api/v1/catalog/searchAll");
-
-    // Add query parameters
     query.addQueryItem("keywords", searchText);
-
-    // Set the query on the URL
     url.setQuery(query);
-
-    // Create the request with the URL
     QNetworkRequest request(url);
 
-    // Set the raw header (e.g., User-Agent)
     request.setRawHeader("User-Agent", "MyOwnBrowser 1.0");
-
-    // Send the request using QNetworkAccessManager
     QNetworkReply *reply = manager->get(request);
 
     connect(reply, &QIODevice::readyRead, this, &MainWindow::slotReadyRead);
     connect(reply, &QNetworkReply::errorOccurred, this, &MainWindow::slotError);
     connect(reply, &QNetworkReply::sslErrors, this, &MainWindow::slotSslErrors);
+
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    if (Format_Context) {
+        avformat_close_input(&Format_Context);
+    }
+    avformat_network_deinit();
 }
+
+void MainWindow::updateMetadata() {
+    qDebug() << "*** metaData Update:" << metaUrl;
+    openMedia(metaUrl);
+    if (title != "") { ui->title->setText(title); }
+    if (artist != "") { ui->artist->setText(artist); }
+    ui->outputText->setText(outputText);
+}
+
+void MainWindow::GetMetaData(const QString &metaUrl) {
+    qDebug() << "*** Getting MetaData:" << metaUrl;
+    openMedia(metaUrl);
+    if (title != "") { ui->title->setText(title); }
+    if (artist != "") { ui->artist->setText(artist); }
+    ui->outputText->setText(outputText);
+}
+
 void MainWindow::PlayBack(const QString &streamName, const QUrl &streamUrl, bool fromGui) {
     if (fromGui) {
         ui->rawText->append(QString(streamUrl.toString()));
 
         if (streamUrl.isValid()) {
-            player->setSource(streamUrl);  // Set the media stream URL
+            if (streamUrl.toString().contains("hls.m3u8")) {
+                //qDebug() << "** HLS Stream URL:" << streamUrl.toString();
+                QNetworkRequest request(streamUrl);
+                reply = manager->get(request);
+            } else if (streamUrl.toString().contains(".pls")) {
+                //qDebug() << "** PLS Stream URL:" << streamUrl.toString();
+                QNetworkRequest request(streamUrl);
+                reply = manager->get(request);
+            }
             audioOutput->setVolume(0.5);
-            player->play();  // Play the stream
-            statusBar()->showMessage("Playing: " + streamName);  // Update the status bar
-    } else {
-        // Handle invalid URL or error
-        statusBar()->showMessage("Error: Invalid URL for " + streamName);
-        //qDebug() << "Failed to set Downtown stream URL.";
-    }
+            StartPlay(streamUrl);
+            statusBar()->showMessage("Playing: " + streamName);
+        } else {
+            statusBar()->showMessage("Error: Invalid URL for " + streamName);
+        }
 
     } else {
         qDebug() << ":Error: " << fromGui << streamUrl;
@@ -86,36 +131,45 @@ void MainWindow::PlayBack(const QString &streamName, const QUrl &streamUrl, bool
 
 }
 
-void MainWindow::SearchTriggered() {
-    // clear previous allStations
-    allStations.clear();
-    imageMap.clear();
-    qDebug() << "Station Map Size: " << stationMap.size();
-    // Code to execute when the action is triggered
-    ui->rawText->setText("Search has been Triggered");
-    QString x = ui->searchTerm->text();
-    if (x != searchText) {
-        searchText = ui->searchTerm->text();
-        query.clear();
+void MainWindow::parseM3U(const QString &m3uContent) {
+    QRegularExpression regex(R"#(title="([^"]+)",artist="([^"]+)")#");
+    QRegularExpressionMatch match = regex.match(m3uContent);
 
-        // setup for new query item
-        query.addQueryItem("keywords", searchText);
-        QUrl url("http://api2.iheart.com/api/v1/catalog/searchAll");
-        url.setQuery(query);
-        request.setUrl(url);
+    if (match.hasMatch()) {
+        QString title = match.captured(1);
+        QString artist = match.captured(2);
 
-        // Debug the URL and query
-        qDebug() << "Full URL:" << url.toString();
-        qDebug() << "Query:" << query.toString();
-        QNetworkRequest request(url);
-        reply = manager->get(request);
+        ui->rawText->append(QString("Title: %1\nArtist: %2").arg(title).arg(artist));
+        ui->title->setText(title);
+        ui->artist->setText(artist);
     } else {
-        qDebug() << "Error: Search Text is not different";
+        qDebug() << "No match found.";
     }
 }
 
+void MainWindow::SearchTriggered() {
+    allStations.clear();
+    imageMap.clear();
+    query.clear();
+    //qDebug() << "Station Map Size: " << stationMap.size();
+
+    ui->rawText->setText("Search has been Triggered");
+
+    searchText = ui->searchTerm->text();
+
+    query.addQueryItem("keywords", searchText);
+    QUrl url("http://api2.iheart.com/api/v1/catalog/searchAll");
+    url.setQuery(query);
+    request.setUrl(url);
+
+        // Debug the URL and query
+        //qDebug() << "Full URL:" << url.toString();
+        //qDebug() << "Query:" << query.toString();
+    QNetworkRequest request(url);
+    reply = manager->get(request);
+}
+
 void MainWindow::StreamTriggered(const QString &id, bool fromGui) {
-    // Code to execute when the action is triggered
     qDebug() << "Stream Triggered:" << id;
     hitsMap.clear();
     streamsMap.clear();
@@ -131,7 +185,7 @@ void MainWindow::StreamTriggered(const QString &id, bool fromGui) {
     } else {
         QString y = ui->searchTerm->text();
         QRegularExpression regex("^\\d{4}$");
-        // Check if the input matches the 4-digit pattern
+
         if (regex.match(y).hasMatch()) {
             url.setPath(url.path() + y);
             qDebug() << "Full URL:" << url.toString();
