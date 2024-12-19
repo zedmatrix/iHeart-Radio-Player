@@ -1,0 +1,15 @@
+if(NOT EXISTS "@CMAKE_INSTALL_PREFIX@/install_manifest.txt")
+    message(FATAL_ERROR "Cannot find install_manifest.txt. Ensure the project is installed.")
+endif()
+
+file(READ "@CMAKE_INSTALL_PREFIX@/install_manifest.txt" files_to_remove)
+string(REPLACE "\n" ";" files_to_remove "${files_to_remove}")
+
+foreach(file ${files_to_remove})
+    if(EXISTS "${file}")
+        message(STATUS "Removing ${file}")
+        execute_process(COMMAND ${CMAKE_COMMAND} -E remove "${file}")
+    else()
+        message(STATUS "File not found: ${file}")
+    endif()
+endforeach()

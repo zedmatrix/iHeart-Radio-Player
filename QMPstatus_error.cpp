@@ -1,3 +1,6 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
 void MainWindow::MediaPlayerError(QMediaPlayer::Error error)
 {
     QString errorMessage;
@@ -21,7 +24,7 @@ void MainWindow::MediaPlayerError(QMediaPlayer::Error error)
             errorMessage = "Unknown error.";
             break;
     }
-    //qDebug() << "QMediaPlayer Error: " << errorMessage;
+
     statusBar()->showMessage(errorMessage);
 }
 
@@ -54,6 +57,5 @@ void MainWindow::MediaStatus(QMediaPlayer::MediaStatus status)
             statusMessage = "Invalid media.";
             break;
     }
-    //qDebug() << "QMediaPlayer Status: " << statusMessage;
     statusBar()->showMessage(statusMessage);
 }

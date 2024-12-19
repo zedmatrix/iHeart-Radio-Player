@@ -29,6 +29,8 @@
 #include <QPixmap>
 #include <QMessageBox>
 #include <QTextDocument>
+#include <QWidget>
+#include "mousevolume.h"
 #include "enum_parser.h"
 
 extern "C" {
@@ -61,7 +63,7 @@ public:
     QList<QMap<Stations, QString>> allStations;
     QMap<int, QPixmap> imageMap;
     QMap<int, QPushButton*> logoButtonMap;
-    QString metaUrl, outputText, searchText, errorText, title, artist;
+    QString metaUrl, outputText, rawText, searchText, errorText, title, artist;
     QUrl streamUrl;
     const char* FFurl;
     bool Search, Stream;

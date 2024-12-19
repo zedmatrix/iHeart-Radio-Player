@@ -1,3 +1,6 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
 void MainWindow::popupImage(const int &id, QString const &stationName) {
     ui->rawText->append(QString("Message Box Id: %1, Name: %2").arg(id).arg(stationName));
 

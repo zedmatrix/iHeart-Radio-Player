@@ -7,7 +7,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-class MainWindow; //Forward declare
+class MainWindow;
 
 class MouseVolume : public QWidget
 {
@@ -22,7 +22,7 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
 
 private:
-    MainWindow *mainWindow;  // Pointer to MainWindow
+    MainWindow *mainWindow;
     Ui::MainWindow *ui;
     QScrollBar *volumeBar;
     double trackVolume;

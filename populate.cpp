@@ -1,4 +1,7 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
 #include "enum_parser.h"
+
 // Populate Hits and Streams Maps from Get Stream Function
 void MainWindow::populateHitsMap (const QJsonObject &obj, QMap<Hits, QString> &hitsMap, QMap<Streams, QString> &streamsMap) {
     QString hitsKey, skey, subStream;
@@ -17,11 +20,11 @@ void MainWindow::populateHitsMap (const QJsonObject &obj, QMap<Hits, QString> &h
                         Streams sEnum = stringToEnum(skey);
                         streamsMap[sEnum] = svalue.toString();
                     } catch (const std::invalid_argument &e) {
-                        qDebug() << "Error: " << e.what();
+                        rawText += "Error: " + QString(e.what()) + "\n";
                     }
                 }
             } else {
-                qDebug() << "Invalid Stream Definition";
+                rawText += "Invalid Stream Definition";
             }
         } else {
             try {
@@ -58,10 +61,11 @@ void MainWindow::populateHitsMap (const QJsonObject &obj, QMap<Hits, QString> &h
 
 
             } catch (const std::invalid_argument &e) {
-                qDebug() << "Error: " << e.what();
+                rawText += "Error: " + QString(e.what()) + "\n";
             }
         }
     }
+
 }
 
 // Populate Station Map from Search Function
@@ -84,7 +88,7 @@ QMap<Stations, QString> MainWindow::populateStationMap (const QJsonObject &obj, 
                 }
             }
         } catch (const std::invalid_argument &e) {
-                qDebug() << "Error: " << e.what();
+                rawText += "Error: " + QString(e.what()) + "\n";
         }
     }
     return stationMap;
@@ -92,6 +96,7 @@ QMap<Stations, QString> MainWindow::populateStationMap (const QJsonObject &obj, 
 
 // Main Populate Function Called from Network reply functions -> 'hits' and 'stations'
 void MainWindow::populate(const QJsonObject &jsonObj, const QString &key) {
+    rawText.clear();
     QJsonValue newValue = jsonObj.value(key);
     if (newValue.isArray()) {
         QJsonArray newArray = newValue.toArray();
@@ -104,11 +109,12 @@ void MainWindow::populate(const QJsonObject &jsonObj, const QString &key) {
                 } else if (key == "stations") {
                     allStations.append(populateStationMap(newObj, stationMap));
                 } else {
-                    qDebug() << "Undefined Mapping Key";
+                    rawText += "Undefined Mapping Key";
                 }
             }
         }
     } else {
-        qDebug() << "Error: Expected an array for " << key << " key";
+        rawText += QString("Error: Expected an array %1 Key.\n").arg(key);
     }
+    ui->rawText->setText(rawText);
 }

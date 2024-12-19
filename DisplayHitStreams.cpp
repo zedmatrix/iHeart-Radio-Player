@@ -1,3 +1,6 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
 void MainWindow::DisplayHitStreams() {
     auto streamToString = [](Streams stream) -> QString {
         switch (stream) {
@@ -18,7 +21,7 @@ void MainWindow::DisplayHitStreams() {
         }
     };
 
-    QString outputText;
+    outputText.clear();
     clearLayout(ui->verticalLayout);
 
     QString id = hitsMap.value(Hits::id);
@@ -72,4 +75,5 @@ void MainWindow::DisplayHitStreams() {
     hLayout->addWidget(logoLabel);
     hLayout->addLayout(vLayout);
     ui->verticalLayout->addLayout(hLayout);
+    ui->outputText->setText(outputText);
 }

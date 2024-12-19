@@ -1,6 +1,9 @@
 // Global outputText, title, artist
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
 
 void MainWindow::openMedia(const QString &metaUrl) {
+    outputText.clear();
     if (Format_Context) {
         avformat_close_input(&Format_Context);
         Format_Context = nullptr;
@@ -10,11 +13,11 @@ void MainWindow::openMedia(const QString &metaUrl) {
     FFurl = metaUrl.toUtf8().constData();
 
     if (avformat_open_input(&Format_Context, FFurl, nullptr, nullptr) < 0) {
-        qDebug() << "Could not open source: " << FFurl;
+        rawText += QString("Could not open source: %1\n").arg(QString::fromUtf8(FFurl));
         return;
     }
     if (avformat_find_stream_info(Format_Context, nullptr) < 0) {
-        qDebug() << "*** Error: Could Not Find Stream Information ***";
+        rawText += "*** Error: Could Not Find Stream Information ***\n";
         return;
     }
 
@@ -74,7 +77,7 @@ void MainWindow::openMedia(const QString &metaUrl) {
                     }
                 }
             } else {
-                outputText += QString("No Streams or metadata available\n");
+                rawText += QString("No Streams or metadata available\n");
             }
         }
     }
@@ -83,11 +86,11 @@ void MainWindow::openMedia(const QString &metaUrl) {
     if (metadata) {
 
         while ((tag = av_dict_get(metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
-            outputText += QString("Key: %1, Value: %2").arg(tag->key).arg(tag->value);
+            rawText += QString("Key: %1, Value: %2").arg(tag->key).arg(tag->value);
         }
 
     } else {
-        outputText += QString("No metadata available.");
+        rawText += QString("No metadata available.");
     }
     avformat_close_input(&Format_Context);
     Format_Context = nullptr;

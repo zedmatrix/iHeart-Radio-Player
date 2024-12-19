@@ -1,9 +1,10 @@
 # iHeart Radio Player
 
-version 1.0 
+  Version 1.0<br>
 
-  Search, get stream and play stream function
-ui still needs work
+  Search, Get and Play iHeart Stream<br>
+  Station Logos Populate<br>
+  Ui still needs work (suggestions welcome)<br>
 
 # Added
 * Mouse volume control
@@ -13,6 +14,8 @@ ui still needs work
 * Removed the restriction on search text
 * Added {enter} key on search text
 * Changed Ui
+* Added `make install`
+* Added `make uninstall`
 
 # Installation
 git clone

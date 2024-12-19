@@ -1,6 +1,9 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
 void MainWindow::onFinished(QNetworkReply* reply)
 {
-    QString rawText = {};
+    rawText.clear();
     // Handle onFinished signal here
     if (reply->error() == QNetworkReply::NoError) {
 
@@ -63,7 +66,8 @@ void MainWindow::onFinished(QNetworkReply* reply)
 
                     for (const auto &stationMap : allStations) {
                         if (stationMap.value(Stations::newlogo) == requestUrl.toString()) {
-                            int stationId = stationMap.value(Stations::id).toInt();
+                            QString Idstring = stationMap.value(Stations::id);
+                            int stationId = Idstring.toInt();
                             QPixmap pixmap = QPixmap::fromImage(image);
                             imageMap[stationId] = pixmap;
 
@@ -73,7 +77,7 @@ void MainWindow::onFinished(QNetworkReply* reply)
                                 logoButton->setIcon(buttonIcon);
                                 logoButton->setIconSize(QSize(38,38));
                         }
-                            qDebug() << "Image loaded and stored for station ID:" << stationId;
+                            rawText += QString("Image loaded and stored for station ID: %1\n").arg(Idstring);
                         }
                     }
                     int numImages = imageMap.size();
@@ -86,28 +90,34 @@ void MainWindow::onFinished(QNetworkReply* reply)
             rawText += QString("Received response for an unexpected path: %1\n").arg(requestUrl.toString());
         }
     } else {
-        errorText = reply->errorString();
-        qDebug() << "Error Text From Network Manager:" << errorText;
-
+        QString errorText = reply->errorString();
+        rawText += QString("Error Text From Network Manager: %1\n").arg(errorText);
     }
-    ui->rawText->setText(rawText);
+    ui->rawText->setPlainText(rawText);
     reply->deleteLater();
 }
 
 void MainWindow::slotReadyRead()
 {
-    qDebug() << ":slot Ready Read:";
+    ui->rawText->insertPlainText(":slot Ready Read:");
 }
 
 void MainWindow::slotError(QNetworkReply::NetworkError code)
 {
-    qDebug() << ":Network Error code:" << code;
+    rawText = QString(":Network Error: %1 (%2)\n").arg(code).arg(reply->errorString());
+    ui->rawText->insertPlainText(rawText);
+
 }
 
 void MainWindow::slotSslErrors(const QList<QSslError> &errors)
 {
-    qDebug() << ":ssl Error List:";
+    QStringList errorMessages;
+    errorMessages.append(":SSL Error List:");
+
     for (const QSslError &error : errors) {
-        qDebug() << error.errorString();
+        errorMessages.append(error.errorString());
     }
+
+    rawText = errorMessages.join("\n") + "\n";
+    ui->rawText->insertPlainText(rawText);
 }

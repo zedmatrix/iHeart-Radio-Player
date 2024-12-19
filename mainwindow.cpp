@@ -1,18 +1,5 @@
-#include <QMainWindow>
-#include "DisplayStations.cpp"
-#include "DisplayHitStreams.cpp"
-#include "enum_parser.h"
-#include "jsonParser.cpp"
-#include "populate.cpp"
-#include "network_manager.cpp"
-#include "popupImage.cpp"
-#include "QMPstatus_error.cpp"
-#include "openMedia.cpp"
-#include <QWidget>
-#include <QLabel>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "mousevolume.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -52,15 +39,16 @@ MainWindow::MainWindow(QWidget *parent)
         player->stop();
         player->setSource(streamUrl);
         player->play();
-        ui->rawText->append(QString(streamUrl.toString()));
-        qDebug() << "*** StartPlay: " << streamUrl;
         metaUrl = streamUrl.toString();
+        rawText = QString("*** StartPlay: %1\n").arg(metaUrl);
+
         GetMetaData(metaUrl);
         if (streamUrl.toString().contains("playlist")) {
-            qDebug() << "*** NEW Request ***" << streamUrl;
+            rawText = QString("*** NEW Request: %1\n").arg(metaUrl);
             QNetworkRequest request(streamUrl);
             reply = manager->get(request);
         }
+        ui->rawText->append(rawText);
     };
 
     // Setup url for request
@@ -88,7 +76,6 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::updateMetadata() {
-    qDebug() << "*** metaData Update:" << metaUrl;
     openMedia(metaUrl);
     if (title != "") { ui->title->setText(title); }
     if (artist != "") { ui->artist->setText(artist); }
@@ -96,7 +83,6 @@ void MainWindow::updateMetadata() {
 }
 
 void MainWindow::GetMetaData(const QString &metaUrl) {
-    qDebug() << "*** Getting MetaData:" << metaUrl;
     openMedia(metaUrl);
     if (title != "") { ui->title->setText(title); }
     if (artist != "") { ui->artist->setText(artist); }
@@ -108,14 +94,18 @@ void MainWindow::PlayBack(const QString &streamName, const QUrl &streamUrl, bool
         ui->rawText->append(QString(streamUrl.toString()));
 
         if (streamUrl.isValid()) {
+            // HLS Stream decode
             if (streamUrl.toString().contains("hls.m3u8")) {
-                //qDebug() << "** HLS Stream URL:" << streamUrl.toString();
+
                 QNetworkRequest request(streamUrl);
                 reply = manager->get(request);
+
+            // PLS Stream decode
             } else if (streamUrl.toString().contains(".pls")) {
-                //qDebug() << "** PLS Stream URL:" << streamUrl.toString();
+
                 QNetworkRequest request(streamUrl);
                 reply = manager->get(request);
+
             }
             audioOutput->setVolume(0.5);
             StartPlay(streamUrl);
@@ -125,9 +115,9 @@ void MainWindow::PlayBack(const QString &streamName, const QUrl &streamUrl, bool
         }
 
     } else {
-        qDebug() << ":Error: " << fromGui << streamUrl;
+        rawText = QString(":ERROR: %1\n").arg(streamUrl.toString());
+        ui->rawText->append(rawText);
     }
-
 
 }
 
@@ -143,7 +133,7 @@ void MainWindow::parseM3U(const QString &m3uContent) {
         ui->title->setText(title);
         ui->artist->setText(artist);
     } else {
-        qDebug() << "No match found.";
+        ui->rawText->append("No match found.");
     }
 }
 
@@ -151,7 +141,6 @@ void MainWindow::SearchTriggered() {
     allStations.clear();
     imageMap.clear();
     query.clear();
-    //qDebug() << "Station Map Size: " << stationMap.size();
 
     ui->rawText->setText("Search has been Triggered");
 
@@ -162,15 +151,13 @@ void MainWindow::SearchTriggered() {
     url.setQuery(query);
     request.setUrl(url);
 
-        // Debug the URL and query
-        //qDebug() << "Full URL:" << url.toString();
-        //qDebug() << "Query:" << query.toString();
     QNetworkRequest request(url);
     reply = manager->get(request);
 }
 
 void MainWindow::StreamTriggered(const QString &id, bool fromGui) {
-    qDebug() << "Stream Triggered:" << id;
+    outputText = QString("Stream Triggered: %1").arg(id);
+    //qDebug() << "Stream Triggered:" << id;
     hitsMap.clear();
     streamsMap.clear();
 
@@ -179,7 +166,8 @@ void MainWindow::StreamTriggered(const QString &id, bool fromGui) {
     if (fromGui) {
         ui->rawText->setText("Station ID Clicked:" + id);
         url.setPath(url.path() + id);
-        qDebug() << "Full URL:" << url.toString();
+        outputText += QString("Full URL: %1\n").arg(url.toString());
+        //qDebug() << "Full URL:" << url.toString();
         QNetworkRequest request(url);
         reply = manager->get(request);
     } else {
@@ -188,11 +176,16 @@ void MainWindow::StreamTriggered(const QString &id, bool fromGui) {
 
         if (regex.match(y).hasMatch()) {
             url.setPath(url.path() + y);
-            qDebug() << "Full URL:" << url.toString();
+            outputText += QString("Full URL: %1\n").arg(url.toString());
+            //qDebug() << "Full URL:" << url.toString();
             QNetworkRequest request(url);
             reply = manager->get(request);
         } else {
-            qDebug() << "Invalid 4-digit value for Stream Get.";
+            outputText += QString("Error: Invalid 4 Digit Stream Id.%1\n").arg(id);
+            //qDebug() << "Invalid 4-digit value for Stream Get.";
         }
     }
+
+    //Update rawText Left Display
+    ui->rawText->setText(outputText);
 }

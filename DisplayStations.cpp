@@ -1,10 +1,6 @@
-#include <QPushButton>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLayoutItem>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
 void MainWindow::clearLayout(QLayout* layout) {
     if (layout == nullptr) return;
 
@@ -20,7 +16,7 @@ void MainWindow::clearLayout(QLayout* layout) {
 }
 
 void MainWindow::DisplayStations() {
-    QString outputText;
+    outputText.clear();
     clearLayout(ui->verticalLayout);
 
     for (const auto& station : allStations) {
@@ -33,7 +29,7 @@ void MainWindow::DisplayStations() {
 
         QPushButton* stationButton = new QPushButton(id, ui->verticalLayoutWidget);
         stationButton->setObjectName("stationButton" + id);
-        stationButton->setFixedWidth(40);
+        stationButton->setFixedWidth(50);
         connect(stationButton, &QPushButton::clicked, this, [id, this]() { StreamTriggered(id, true); });
 
 // Create the QLabel for Stations::name
@@ -46,7 +42,7 @@ void MainWindow::DisplayStations() {
 // Create the QPushButton for Stations::logo/newlogo
         QPushButton* logoButton = new QPushButton(ui->verticalLayoutWidget);
         logoButton->setObjectName("logoButton" + id);
-        logoButton->setFixedSize(40,40);
+        logoButton->setFixedSize(42,42);
 
         logoButtonMap[id.toInt()] = logoButton;
         connect(logoButton, &QPushButton::clicked, this, [id, name, this]() { popupImage(id.toInt(), name); });
@@ -65,5 +61,5 @@ void MainWindow::DisplayStations() {
         ui->verticalLayout->addLayout(hLayout);
 
     }
-    ui->outputText->setPlainText(outputText);
+    ui->outputText->setText(outputText);
 }
