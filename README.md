@@ -18,7 +18,8 @@
 * Added `make uninstall`
 
 # Installation
-git clone
+
+  Download and Extract
 ```
   mkdir -v build
   cd build
